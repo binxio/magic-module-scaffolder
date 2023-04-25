@@ -1,0 +1,49 @@
+!ruby/object:Api::Resource
+name: AddressGroup
+base_url: v1beta1/projects/{projectsId}/locations/{locationsId}/addressGroups
+description: "AddressGroup is a resource that specifies how a collection of IP/DNS\nused in Firewall Policy."
+properties:
+  - !ruby/object:Api::Type::String
+    name: description
+    description: Optional. Free-text description of the resource.
+  - !ruby/object:Api::Type::Array
+    name: items
+    description: Optional. List of items.
+    item_type: !ruby/object:Api::Type::String {}
+  - !ruby/object:Api::Type::Integer
+    name: capacity
+    description: Required. Capacity of the Address Group
+    required: true
+  - !ruby/object:Api::Type::String
+    name: createTime
+    description: Output only. The timestamp when the resource was created.
+  - !ruby/object:Api::Type::Enum
+    name: type
+    description: |
+      Required. The type of the Address Group. Possible values are "IPv4" or
+      "IPV6".
+      The possible values are:
+
+      * `TYPE_UNSPECIFIED`: Default value.
+
+      * `IPV4`: IP v4 ranges.
+
+      * `IPV6`: IP v6 ranges.
+    required: true
+    values:
+      - :TYPE_UNSPECIFIED
+      - :IPV4
+      - :IPV6
+  - !ruby/object:Api::Type::String
+    name: updateTime
+    description: Output only. The timestamp when the resource was updated.
+  - !ruby/object:Api::Type::KeyValuePairs
+    name: labels
+    description: Optional. Set of label tags associated with the AddressGroup resource.
+  - !ruby/object:Api::Type::String
+    name: selfLink
+    description: Output only. Server-defined fully-qualified URL for this resource.
+  - !ruby/object:Api::Type::String
+    name: name
+    description: "Required. Name of the AddressGroup resource. It matches pattern\n`projects/*/locations/{location}/addressGroups/`."
+    required: true
