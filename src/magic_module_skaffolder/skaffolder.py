@@ -1,4 +1,6 @@
+import os
 import logging
+import re
 from pathlib import Path
 from typing import Optional, Dict, Any
 
@@ -46,7 +48,7 @@ class Skaffolder:
         if description:
             result["description"] = (
                 LiteralScalarString(description)
-                if description.count("\n") > 1
+                if description.count("\n") >= 1
                 else description
             )
 
@@ -61,14 +63,18 @@ class Skaffolder:
 
         value_type = type_definition.value_type
         value_format = type_definition.value_format
-        target_type = {
-            "double": "Api::Type::Double",
-            "float": "Api::Type::Double",
-            "int32": "Api::Type::Integer",
-            "int64": "Api::Type::Integer",
-            "uint32": "Api::Type::Integer",
-            "uint64": "Api::Type::Integer",
-        }.get(value_format) if value_type == 'string' else None
+        target_type = (
+            {
+                "double": "Api::Type::Double",
+                "float": "Api::Type::Double",
+                "int32": "Api::Type::Integer",
+                "int64": "Api::Type::Integer",
+                "uint32": "Api::Type::Integer",
+                "uint64": "Api::Type::Integer",
+            }.get(value_format)
+            if value_type == "string"
+            else None
+        )
 
         if not value_type:
             ref = type_definition.get("$ref")
@@ -136,11 +142,130 @@ class Skaffolder:
                             api, property_name, property_definition
                         )
                     )
+                if len(properties) == 1:
+                    properties[0]["required"] = True
                 result["properties"] = properties
         else:
             raise ValueError(f"unexpected type {value_type}")
 
         return Field.create(result)
+
+    def generate_magic_module_resource_properties(
+        self, api, resource_name, type_name
+    ) -> (dict, bool):
+        """
+        generates the properties for the magic module resource definition. Unfamiliarity with
+        the magic modules and their mapping from api definition, makes this a best effort
+        approach.
+        """
+        result = {"name": type_name}
+        type_definition = api.get_schema_type_definition(type_name)
+        if type_definition.kind:
+            result["kind"] = type_definition.kind
+
+        resource_definition = api.get_resource_definition(resource_name)
+        method = resource_definition.get_insert_or_create_method()
+
+        def parameter_camel_case_to_snake_case(name: str):
+            name = name.removesuffix("Id")
+            name = singularize(name)
+            name = re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
+            return name
+
+        def add_base_url():
+            """
+            the base url is without the version prefix and appears
+            to have all variable references in the definition replaced
+            with a snake case, singular variable. eg. {projectsId} -> {{project}}.
+            :return:
+            """
+            base_url = (
+                method.flat_path[len(api.api_version) + 1 :]
+                if method.flat_path.startswith(api.api_version + "/")
+                else method.flat_path
+            )
+
+            def _singular_snake_case(match: re.Match) -> str:
+                return "{{" + parameter_camel_case_to_snake_case(match.group(1)) + "}}"
+
+            base_url = re.sub(r"{([^}]*)}", _singular_snake_case, base_url)
+            result["base_url"] = base_url
+
+        def add_self_link():
+            if "name" in type_definition.properties.keys():
+                result["self_link"] = result["base_url"] + "/{{name}}"
+
+        def add_update_verb():
+            patch_method = resource_definition.methods.get("patch")
+            if patch_method:
+                result["update_verb"] = "PATCH"
+                if "updateMask" in patch_method.parameters:
+                    result["update_mask"] = True
+
+        def add_create_link():
+            id_name = type_name[0].lower() + type_name[1:] + "Id"
+            if (
+                id_name not in method.parameters
+                and "name" not in type_definition.properties
+            ):
+                return
+
+            result["import_format"] = [result["base_url"] + "/{{name}}"]
+
+            query_parameters = {}
+            parameters = []
+            readable_name = parameter_camel_case_to_snake_case(type_name).replace(
+                "_", " "
+            )
+            for name, value in method.parameters.items():
+                if name == id_name:
+                    parameter = self.create_magic_module_field(
+                        api, "name", type_definition.properties["name"]
+                    )
+                    parameter[
+                        "description"
+                    ] = f"A user-defined name which uniquely identifies a {readable_name}."
+                    parameter["url_param_only"] = True
+                    parameters.append(parameter)
+                    if value.get("location") == "query":
+                        query_parameters[name] = "{{name}}"
+                elif name == "parent":
+                    parameter = self.create_magic_module_field(api, "location", value)
+                    parameter["default"] = "global"
+                    parameter["url_param_only"] = True
+                    parameter["description"] = f"the location of the {readable_name}."
+                    if value.get("location") == "query":
+                        query_parameters[name] = "{{location}}"
+
+                    parameters.append(parameter)
+                elif name == "updateMask":
+                    continue
+                else:
+                    parameter = self.create_magic_module_field(
+                        api, parameter_camel_case_to_snake_case(name), value
+                    )
+                    if value.get("location") == "query":
+                        query_parameters[name] = (
+                            "{{" + parameter_camel_case_to_snake_case(name) + "}}"
+                        )
+                    parameters.append(parameter)
+
+            if query_parameters:
+                result["create_link"] = (
+                    result["base_url"]
+                    + "/?"
+                    + "&".join(
+                        map(lambda q: f"{q[0]}={q[1]}", query_parameters.items())
+                    )
+                )
+            if parameters:
+                result["parameters"] = parameters
+
+        add_base_url()
+        add_self_link()
+        add_update_verb()
+        add_create_link()
+        return result
 
     def create_magic_module_resource(
         self, api: APIMetaData, resource_name: str, type_name: str
@@ -149,15 +274,18 @@ class Skaffolder:
         Creates a magic module resource definition for the type `type_name` of the `resource_name`
         in the `api`.
         """
-        resource_definition = api.get_resource_definition(resource_name)
 
-        method = resource_definition.get_insert_or_create_method()
         type_definition = api.get_schema_type_definition(type_name)
-        result = Resource({"name": type_name, "base_url": method.flat_path})
-        if type_definition.kind:
-            result["kind"] = type_definition.kind
+        properties = self.generate_magic_module_resource_properties(
+            api, resource_name, type_name
+        )
+        result = Resource(properties)
 
         result.update(self.create_magic_module_field(api, None, type_definition))
+        if any(filter(lambda p: p.get("name") == "name", result.get("parameters", []))):
+            result["properties"] = list(
+                filter(lambda p: p.get("name") != "name", result["properties"])
+            )
         return result
 
 
@@ -199,9 +327,7 @@ def generate(
     the resource name. So the resource name `backendServices` will have type `BackendService`
     as its resource type definition.
     """
-    product_definition_file = Path(product_directory).joinpath(
-        "product.yaml"
-    )
+    product_definition_file = Path(product_directory).joinpath("product.yaml")
     if not product_definition_file.exists():
         click.echo(
             f"'{product_directory} is not a magic module product directory",
@@ -239,22 +365,17 @@ def generate(
     help="containing the magic module resource definition",
 )
 @click.option(
-    "--output-file",
-    type=click.Path(dir_okay=False),
+    "--inplace",
+    is_flag=True,
+    default=False,
     required=False,
-    help="to write updated magic module resource file to",
+    help="update the resource definition file",
 )
-def update(resource_file: str, output_file: str):
+def update(resource_file: str, inplace: bool):
     """
     updates the resource definition in the resource-file to match the latest API specification.
-    If the output-file is not specified, then the result will be written back into the resource-file.
     """
-    if not output_file:
-        output_file = resource_file
-
-    product_definition_file = Path(resource_file).parent.joinpath(
-        "product.yaml"
-    )
+    product_definition_file = Path(resource_file).parent.joinpath("product.yaml")
     if not product_definition_file.exists():
         click.echo(
             f"magic module product definition file '{product_definition_file} not found",
@@ -280,5 +401,8 @@ def update(resource_file: str, output_file: str):
         defined = updater.create_magic_module_resource(api, resource_name, type_name)
         Resource.merge_resources(existing, defined, provider_version)
 
-    with open(output_file, "w") as file:
-        yaml.dump(existing, file)
+    if inplace:
+        with open(resource_file, "w") as file:
+            yaml.dump(existing, file)
+    else:
+        yaml.dump(existing, os.stdout)

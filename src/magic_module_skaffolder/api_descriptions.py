@@ -153,6 +153,13 @@ class SchemaMethodDefinition(dict):
         """
         return SchemaTypeDefinition(self.get("request"))
 
+    @property
+    def parameters(self) -> Dict[str, "SchemaTypeDefinition"]:
+        return {
+            name: SchemaTypeDefinition(definition)
+            for name, definition in self.get("parameters", {}).items()
+        }
+
 
 class SchemaResourceDefinition(dict):
     def __init__(self, resource_name: str, other: dict):
@@ -161,8 +168,11 @@ class SchemaResourceDefinition(dict):
         self.update(other)
 
     @property
-    def methods(self) -> dict:
-        return self.get("methods", {})
+    def methods(self) -> dict[SchemaMethodDefinition]:
+        return {
+            name: SchemaMethodDefinition(value)
+            for name, value in self.get("methods", {}).items()
+        }
 
     def get_insert_or_create_method(self) -> SchemaMethodDefinition:
         insert_definition = self.methods.get("insert", self.methods.get("create"))

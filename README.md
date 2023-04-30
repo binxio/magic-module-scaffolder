@@ -21,7 +21,7 @@ example - update
 To update an existing resource definition, type:
 
 ```
-$ mm-skaffolder update --resource-file tests/mmv1/products/compute/BackendService.yaml
+$ mm-skaffolder update --inplace --resource-file tests/mmv1/products/compute/BackendService.yaml
 
 INFO: adding port as ga field to definition of BackendService
 INFO: adding kind as ga field to definition of BackendService
