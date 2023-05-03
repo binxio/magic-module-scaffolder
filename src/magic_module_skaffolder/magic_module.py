@@ -133,20 +133,13 @@ class Field(CommentedMap):
             for name in set(undefined_property_names):
                 if provider_version == "ga":
                     undefined_property_names.remove(name)
-                    if existing_properties[name].get("min_version", "ga") == "beta":
+                    if existing_properties[name].get("min_version", "ga") != "beta":
+                        existing_properties[name]["min_version"] = "beta"
                         logging.info(
-                            "keeping beta field %s from definition of %s in ga ",
+                            "marking field %s from definition of %s as beta",
                             name,
                             ".".join(path),
                         )
-                    else:
-                        if existing_properties.get("min_version", "") != "beta":
-                            existing_properties["min_version"] = "beta"
-                            logging.info(
-                                "marking field %s from definition of %s as beta",
-                                name,
-                                ".".join(path),
-                            )
 
                 else:
                     logging.warning(

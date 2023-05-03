@@ -195,6 +195,9 @@ class Skaffolder:
             if "name" in type_definition.properties.keys():
                 result["self_link"] = result["base_url"] + "/{{name}}"
 
+            if "self_link" in type_definition.properties.keys():
+                result["has_self_link"] = True
+
         def add_update_verb():
             patch_method = resource_definition.methods.get("patch")
             if patch_method:
@@ -282,9 +285,9 @@ class Skaffolder:
         result = Resource(properties)
 
         result.update(self.create_magic_module_field(api, None, type_definition))
-        if any(filter(lambda p: p.get("name") == "name", result.get("parameters", []))):
+        if any(filter(lambda p: p.get("name") in ["name", "selfLink"], result.get("parameters", []))):
             result["properties"] = list(
-                filter(lambda p: p.get("name") != "name", result["properties"])
+                filter(lambda p: p.get("name") not in ["name", "selfLink"], result["properties"])
             )
         return result
 
