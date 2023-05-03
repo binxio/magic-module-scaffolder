@@ -221,6 +221,9 @@ class Skaffolder:
                 "_", " "
             )
             for name, value in method.parameters.items():
+                if not value.get("required"):
+                    continue
+
                 if name == id_name:
                     parameter = self.create_magic_module_field(
                         api, "name", type_definition.properties["name"]
