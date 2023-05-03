@@ -192,11 +192,10 @@ class Skaffolder:
             result["base_url"] = base_url
 
         def add_self_link():
-            if "name" in type_definition.properties.keys():
-                result["self_link"] = result["base_url"] + "/{{name}}"
-
             if "self_link" in type_definition.properties.keys():
                 result["has_self_link"] = True
+            elif "name" in type_definition.properties.keys():
+                result["self_link"] = result["base_url"] + "/{{name}}"
 
         def add_update_verb():
             patch_method = resource_definition.methods.get("patch")
