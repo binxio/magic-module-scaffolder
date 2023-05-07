@@ -75,7 +75,8 @@ class SchemaTypeDefinition(dict):
 
     @property
     def is_output_only(self) -> bool:
-        return "[output only]" in self.get("description", "").lower()
+        description = self.get("description", "").lower()
+        return description.startswith("output only") or "[output only]" in description
 
     @property
     def is_input_only(self) -> bool:

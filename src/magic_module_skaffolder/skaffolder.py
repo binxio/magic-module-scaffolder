@@ -1,4 +1,4 @@
-import os
+import sys
 import logging
 import re
 from pathlib import Path
@@ -100,6 +100,8 @@ class Skaffolder:
                 name and "timestamp" in name.lower()
             ):
                 result["type"] = "Api::Type::Time"
+            elif name == "etag":
+                result["type"] = "Api::Type::Fingerprint"
             elif type_definition.is_resource_ref:
                 # see https://googlecloudplatform.github.io/magic-modules/docs/how-to/add-mmv1-resource/#resourceref
                 resource_reference = type_definition.is_resource_ref.group(1)
@@ -200,7 +202,7 @@ class Skaffolder:
         def add_update_verb():
             patch_method = resource_definition.methods.get("patch")
             if patch_method:
-                result["update_verb"] = "PATCH"
+                result["update_verb"] = ":PATCH"
                 if "updateMask" in patch_method.parameters:
                     result["update_mask"] = True
 
@@ -220,7 +222,7 @@ class Skaffolder:
                 "_", " "
             )
             for name, value in method.parameters.items():
-                if not value.get("required"):
+                if not value.is_required:
                     continue
 
                 if name == id_name:
@@ -236,7 +238,6 @@ class Skaffolder:
                         query_parameters[name] = "{{name}}"
                 elif name == "parent":
                     parameter = self.create_magic_module_field(api, "location", value)
-                    parameter["default"] = "global"
                     parameter["url_param_only"] = True
                     parameter["description"] = f"the location of the {readable_name}."
                     if value.get("location") == "query":
@@ -256,7 +257,7 @@ class Skaffolder:
                     parameters.append(parameter)
 
             if query_parameters:
-                result["create_link"] = (
+                result["create_url"] = (
                     result["base_url"]
                     + "/?"
                     + "&".join(
@@ -410,4 +411,4 @@ def update(resource_file: str, inplace: bool):
         with open(resource_file, "w") as file:
             yaml.dump(existing, file)
     else:
-        yaml.dump(existing, os.stdout)
+        yaml.dump(existing, sys.stdout)
