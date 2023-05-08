@@ -1,6 +1,7 @@
-import sys
 import logging
 import re
+import sys
+import textwrap
 from pathlib import Path
 from typing import Optional, Dict, Any
 
@@ -206,6 +207,67 @@ class Skaffolder:
                 if "updateMask" in patch_method.parameters:
                     result["update_mask"] = True
 
+        def add_async_operation():
+
+            new_style_async = yaml.load(textwrap.dedent("""
+                autogen_async: true
+                async: !ruby/object:Api::OpAsync
+                  operation: !ruby/object:Api::OpAsync::Operation
+                    path: 'name'
+                    base_url: '{{op_id}}'
+                    wait_ms: 1000
+                    timeouts: !ruby/object:Api::Timeouts
+                      insert_minutes: 30
+                      update_minutes: 30
+                      delete_minutes: 30
+                  result: !ruby/object:Api::OpAsync::Result
+                    path: 'response'
+                  status: !ruby/object:Api::OpAsync::Status
+                    path: 'done'
+                    complete: true
+                    allowed:
+                      - true
+                      - false
+                  error: !ruby/object:Api::OpAsync::Error
+                    path: 'error'
+                    message: 'message'
+            """))
+
+            old_style_async = yaml.load(textwrap.dedent("""
+                autogen_async: true
+                async: !ruby/object:Api::OpAsync
+                  operation: !ruby/object:Api::OpAsync::Operation
+                    kind: 'compute#operation'
+                    path: 'name'
+                    base_url: 'projects/{{project}}/global/operations/{{op_id}}'
+                    wait_ms: 1000
+                  result: !ruby/object:Api::OpAsync::Result
+                    path: 'targetLink'
+                  status: !ruby/object:Api::OpAsync::Status
+                    path: 'status'
+                    complete: 'DONE'
+                    allowed:
+                      - 'PENDING'
+                      - 'RUNNING'
+                      - 'DONE'
+                  error: !ruby/object:Api::OpAsync::Error
+                    path: 'error/errors'
+                    message: 'message'
+            """))
+
+            if method.response.get('$ref') == 'Operation':
+                operation = api.get_schema_type_definition('Operation')
+                operation_properties = operation.get("properties", {})
+                if 'done' in operation_properties:
+                    logging.info("adding new style async operation definition")
+                    result.update(new_style_async)
+                elif "targetLink" in operation_properties:
+                    logging.info("adding compute style async operation definition")
+                    result.update(old_style_async)
+                else:
+                    logging.info("no async operation definition added")
+
+
         def add_create_link():
             id_name = type_name[0].lower() + type_name[1:] + "Id"
             if (
@@ -271,6 +333,8 @@ class Skaffolder:
         add_self_link()
         add_update_verb()
         add_create_link()
+        add_async_operation()
+
         return result
 
     def create_magic_module_resource(

@@ -155,6 +155,13 @@ class SchemaMethodDefinition(dict):
         return SchemaTypeDefinition(self.get("request"))
 
     @property
+    def response(self) -> SchemaTypeDefinition:
+        """
+        the schema definition of the response
+        """
+        return SchemaTypeDefinition(self.get("response"))
+
+    @property
     def parameters(self) -> Dict[str, "SchemaTypeDefinition"]:
         return {
             name: SchemaTypeDefinition(definition)
