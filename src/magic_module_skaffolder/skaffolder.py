@@ -72,6 +72,7 @@ class Skaffolder:
                 "int64": "Api::Type::Integer",
                 "uint32": "Api::Type::Integer",
                 "uint64": "Api::Type::Integer",
+                "google-datetime": "Api::Type::Time",
             }.get(value_format)
             if value_type == "string"
             else None
