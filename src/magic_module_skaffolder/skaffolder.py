@@ -160,7 +160,7 @@ class Skaffolder:
         return Field.create(result)
 
     def generate_magic_module_resource_properties(
-        self, api, resource_name, type_name
+        self, api, resource_name, type_name, schema_type_name
     ) -> (dict, bool):
         """
         generates the properties for the magic module resource definition. Unfamiliarity with
@@ -168,7 +168,7 @@ class Skaffolder:
         approach.
         """
         result = {"name": type_name}
-        type_definition = api.get_schema_type_definition(type_name)
+        type_definition = api.get_schema_type_definition(schema_type_name)
         if type_definition.kind:
             result["kind"] = type_definition.kind
 
@@ -351,9 +351,15 @@ class Skaffolder:
         in the `api`.
         """
 
-        type_definition = api.get_schema_type_definition(type_name)
+        resource_definition = api.get_resource_definition(resource_name)
+        create_method = resource_definition.get_insert_or_create_method()
+        type_definition = create_method.request
+        schema_type_name = type_definition.get('$ref', type_name)
+        if schema_type_name and schema_type_name != type_name:
+            logging.info('schema type name in create method is %s, not %s', schema_type_name, type_name)
+
         properties = self.generate_magic_module_resource_properties(
-            api, resource_name, type_name
+            api, resource_name, type_name, schema_type_name
         )
         result = Resource(properties)
 
