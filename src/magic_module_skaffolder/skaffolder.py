@@ -131,7 +131,12 @@ class Skaffolder:
                     type_definition.get("additionalProperties", {}).get("type")
                     == "string"
                 ):
-                    result["type"] = "Api::Type::KeyValuePairs"
+                    if name == "labels":
+                        result["type"] = "Api::Type::KeyValueLabels"
+                    elif name == "annotations":
+                        result["type"] = "Api::Type::KeyValueAnnotations"
+                    else:
+                        result["type"] = "Api::Type::KeyValuePairs"
                 else:
                     raise ValueError("object type is missing properties")
             else:
