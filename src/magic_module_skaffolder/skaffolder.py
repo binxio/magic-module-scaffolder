@@ -473,7 +473,7 @@ def update(resource_file: str, inplace: bool):
         click.echo(str(error), err=True)
 
     type_name = existing["name"]
-    api_name, _ = existing["kind"].split("#")
+    #api_name, _ = existing["kind"].split("#")
     resource_name = existing["base_url"].split("/")[-1]
 
     updater = Skaffolder()
