@@ -10,19 +10,20 @@ from pattern.text.en import singularize
 from ruamel.yaml import YAML
 from ruamel.yaml.scalarstring import LiteralScalarString
 
-from magic_module_skaffolder.api_descriptions import (
+from magic_module_scaffolder.api_descriptions import (
     APIMetaData,
     SchemaTypeDefinition,
 )
-from magic_module_skaffolder.magic_module import Product, Field, Resource
+from magic_module_scaffolder.magic_module import Product, Field, Resource
 
 yaml = YAML(typ="rt")
 yaml.indent(mapping=2, sequence=4, offset=2)
 yaml.preserve_quotes = True
+yaml.preserve_whitespace = True
 yaml.width = 255
 
 
-class Skaffolder:
+class Scaffolder:
     """
     generates or updates a Magic Module Resource definition with the metadata of the
     Google Cloud APIs.
@@ -417,7 +418,7 @@ def generate(
         )
 
     product_definition = Product.load(product_definition_file)
-    updater = Skaffolder()
+    updater = Scaffolder()
     for resource_name in resource:
         type_name = (
             singularize(resource_name)[0].upper() + singularize(resource_name)[1:]
@@ -467,16 +468,16 @@ def update(resource_file: str, inplace: bool):
     product_definition = Product.load(product_definition_file)
 
     existing: Optional[Resource] = None
+    preamble: str = ""
     try:
-        existing = Resource.load(resource_file)
+        existing, preamble = Resource.load(resource_file)
     except ValueError as error:
         click.echo(str(error), err=True)
 
     type_name = existing["name"]
-    #api_name, _ = existing["kind"].split("#")
     resource_name = existing["base_url"].split("/")[-1]
 
-    updater = Skaffolder()
+    updater = Scaffolder()
 
     for provider_version, api_id in product_definition.get_api_ids():
         api = APIMetaData.load(api_id)
@@ -485,6 +486,8 @@ def update(resource_file: str, inplace: bool):
 
     if inplace:
         with open(resource_file, "w") as file:
+            file.write(preamble)
             yaml.dump(existing, file)
     else:
+        sys.stdout.write(preamble)
         yaml.dump(existing, sys.stdout)

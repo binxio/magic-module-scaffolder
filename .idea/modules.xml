@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/magic-module-skaffolder.iml" filepath="$PROJECT_DIR$/.idea/magic-module-skaffolder.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/magic-module-scaffolder.iml" filepath="$PROJECT_DIR$/.idea/magic-module-scaffolder.iml" />
     </modules>
   </component>
 </project>

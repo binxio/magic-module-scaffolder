@@ -6,7 +6,7 @@ from typing import Optional, Generator, Union
 from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.representer import RoundTripRepresenter
 
-from magic_module_skaffolder.yaml import yaml
+from magic_module_scaffolder.yaml import yaml
 
 _api_url_pattern = re.compile(r"https:\/\/(?P<name>[^\.]*)\.googleapis\.com\/.*")
 
@@ -200,12 +200,17 @@ class Resource(CommentedMap):
         super().__init__(self)
         self.tag.value = "!ruby/object:Api::Resource"
         self.update(other)
+        if isinstance(other, CommentedMap):
+            self.copy_attributes(other)
 
     @staticmethod
-    def load(path: str) -> "Resource":
+    def load(path: str) -> ("Resource", str):
 
         with open(path, "r") as file:
-            result = yaml.load(file)
+            content = file.read()
+            result = yaml.load(content)
+
+        preamble = Resource.extract_preamble_comment(content)
 
         if (
             not isinstance(result, CommentedMap)
@@ -215,7 +220,27 @@ class Resource(CommentedMap):
                 f"{path} does not contain a Magic Module object:Api::Resource"
             )
 
-        return Resource(result)
+        resource = Resource(result)
+        return resource, preamble
+
+    """
+    extracts the preamble comment of a yaml document.
+    """
+    @staticmethod
+    def extract_preamble_comment(content):
+        line = ""
+        line_number = 0
+        lines = content.splitlines(keepends=True)
+        for line_number, line in enumerate(lines):
+            if not line.startswith('#') and line != '\n':
+                break
+        comment = ''.join(lines[:line_number])
+        if line.startswith("--- "):
+            comment = comment + "--- "
+        elif line == "---\n":
+            comment = comment + "---\n"
+
+        return comment
 
     @staticmethod
     def merge_resources(
