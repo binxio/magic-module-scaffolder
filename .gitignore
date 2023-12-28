@@ -107,3 +107,6 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# setuptools scratch version
+_version.py
