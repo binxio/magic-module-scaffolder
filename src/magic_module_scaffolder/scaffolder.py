@@ -216,7 +216,9 @@ class Scaffolder:
 
         def add_async_operation():
 
-            new_style_async = yaml.load(textwrap.dedent("""
+            new_style_async = yaml.load(
+                textwrap.dedent(
+                    """
                 autogen_async: true
                 async: !ruby/object:Api::OpAsync
                   operation: !ruby/object:Api::OpAsync::Operation
@@ -238,9 +240,13 @@ class Scaffolder:
                   error: !ruby/object:Api::OpAsync::Error
                     path: 'error'
                     message: 'message'
-            """))
+            """
+                )
+            )
 
-            old_style_async = yaml.load(textwrap.dedent("""
+            old_style_async = yaml.load(
+                textwrap.dedent(
+                    """
                 autogen_async: true
                 async: !ruby/object:Api::OpAsync
                   operation: !ruby/object:Api::OpAsync::Operation
@@ -260,12 +266,14 @@ class Scaffolder:
                   error: !ruby/object:Api::OpAsync::Error
                     path: 'error/errors'
                     message: 'message'
-            """))
+            """
+                )
+            )
 
-            if method.response.get('$ref') == 'Operation':
-                operation = api.get_schema_type_definition('Operation')
+            if method.response.get("$ref") == "Operation":
+                operation = api.get_schema_type_definition("Operation")
                 operation_properties = operation.get("properties", {})
-                if 'done' in operation_properties:
+                if "done" in operation_properties:
                     logging.info("adding new style async operation definition")
                     result.update(new_style_async)
                 elif "targetLink" in operation_properties:
@@ -273,7 +281,6 @@ class Scaffolder:
                     result.update(old_style_async)
                 else:
                     logging.info("no async operation definition added")
-
 
         def add_create_link():
             id_name = type_name[0].lower() + type_name[1:] + "Id"
@@ -351,13 +358,16 @@ class Scaffolder:
         Creates a magic module resource definition for the type `type_name` of the `resource_name`
         in the `api`.
         """
-
         resource_definition = api.get_resource_definition(resource_name)
         create_method = resource_definition.get_insert_or_create_method()
         type_definition = create_method.request
-        schema_type_name = type_definition.get('$ref', type_name)
+        schema_type_name = type_definition.get("$ref", type_name)
         if schema_type_name and schema_type_name != type_name:
-            logging.info('schema type name in create method is %s, not %s', schema_type_name, type_name)
+            logging.info(
+                "schema type name in create method is %s, not %s",
+                schema_type_name,
+                type_name,
+            )
 
         properties = self.generate_magic_module_resource_properties(
             api, resource_name, type_name, schema_type_name
@@ -365,9 +375,17 @@ class Scaffolder:
         result = Resource(properties)
 
         result.update(self.create_magic_module_field(api, None, type_definition))
-        if any(filter(lambda p: p.get("name") in ["name", "selfLink"], result.get("parameters", []))):
+        if any(
+            filter(
+                lambda p: p.get("name") in ["name", "selfLink"],
+                result.get("parameters", []),
+            )
+        ):
             result["properties"] = list(
-                filter(lambda p: p.get("name") not in ["name", "selfLink"], result["properties"])
+                filter(
+                    lambda p: p.get("name") not in ["name", "selfLink"],
+                    result["properties"],
+                )
             )
         return result
 

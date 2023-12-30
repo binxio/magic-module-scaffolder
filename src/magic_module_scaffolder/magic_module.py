@@ -223,18 +223,18 @@ class Resource(CommentedMap):
         resource = Resource(result)
         return resource, preamble
 
-    """
-    extracts the preamble comment of a yaml document.
-    """
     @staticmethod
     def extract_preamble_comment(content):
+        """
+        extracts the preamble comment of a yaml document. it was too hard to get ruamel.yaml to comply :-p
+        """
         line = ""
         line_number = 0
         lines = content.splitlines(keepends=True)
         for line_number, line in enumerate(lines):
-            if not line.startswith('#') and line != '\n':
+            if not line.startswith("#") and line != "\n":
                 break
-        comment = ''.join(lines[:line_number])
+        comment = "".join(lines[:line_number])
         if line.startswith("--- "):
             comment = comment + "--- "
         elif line == "---\n":
@@ -246,7 +246,6 @@ class Resource(CommentedMap):
     def merge_resources(
         existing: Union["Resource"], defined: Union["Resource"], provider_version: str
     ):
-
         """
         merges the `defined` resource definition into the `existing` resource definition,
         """
