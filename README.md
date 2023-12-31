@@ -1,4 +1,4 @@
-magic-module-skaffolder
+magic-module-scaffolder
 =======================
 
 generates or updates a Magic Module Resource definitions with the metadata
@@ -21,7 +21,7 @@ example - update
 To update an existing resource definition, type:
 
 ```
-$ mm-skaffolder update --inplace --resource-file tests/mmv1/products/compute/BackendService.yaml
+$ mm-scaffolder update --inplace --resource-file tests/mmv1/products/compute/BackendService.yaml
 
 INFO: adding port as ga field to definition of BackendService
 INFO: adding kind as ga field to definition of BackendService
@@ -52,7 +52,7 @@ example - generate
 To generate a new resource definition, type:
 
 ```shell
-$ mm-skaffolder generate \
+$ mm-scaffolder generate \
    --product-directory tests/mmv1/products/networksecurity \
    serverTlsPolicies addressGroups
 INFO: Writing to definition of ServerTlsPolicy to tests/mmv1/products/networksecurity/ServerTlsPolicy.yaml
