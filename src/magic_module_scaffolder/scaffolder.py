@@ -1,4 +1,5 @@
 import logging
+import os
 import re
 import sys
 import textwrap
@@ -406,7 +407,9 @@ def main():
     rerun the merge operation as often as you want. Note that fields of a resource which do not
     exist in the API are removed.
     """
-    pass
+    logging.basicConfig(
+        level=os.getenv("LOG_LEVEL", "INFO"), format="%(levelname)s: %(message)s"
+    )
 
 
 @main.command()
