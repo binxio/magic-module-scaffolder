@@ -132,19 +132,27 @@ class Field(CommentedMap):
             )
 
             for name in set(undefined_property_names):
+                if len(path) == 1 and name == "name":
+                    # this occurs in the cloud Run v2 interface where name is clearly used in the API
+                    # but not in the api definition.
+                    logging.warning(
+                        "the field 'name' is missing from the API definition, but keeping it in the as it is a special name")
+                    undefined_property_names.remove("name")
+                    continue
+
                 if provider_version == "ga":
                     undefined_property_names.remove(name)
                     if existing_properties[name].get("min_version", "ga") != "beta":
                         existing_properties[name]["min_version"] = "beta"
                         logging.info(
-                            "marking field %s from definition of %s as beta",
+                            "marking field '%s' from definition of '%s' as beta",
                             name,
                             ".".join(path),
                         )
 
                 else:
                     logging.warning(
-                        "removing field %s from definition of %s", name, ".".join(path)
+                        "removing field '%s' from definition of '%s'", name, ".".join(path)
                     )
 
             properties = list(
