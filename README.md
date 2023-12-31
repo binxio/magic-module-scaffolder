@@ -58,3 +58,11 @@ $ mm-scaffolder generate \
 INFO: Writing to definition of ServerTlsPolicy to tests/mmv1/products/networksecurity/ServerTlsPolicy.yaml
 
 ```
+
+install
+======
+to install, type:
+
+```
+pip install magic-module-scaffolder
+```
