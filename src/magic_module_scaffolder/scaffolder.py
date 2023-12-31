@@ -491,6 +491,7 @@ def update(resource_file: str, inplace: bool):
         existing, preamble = Resource.load(resource_file)
     except ValueError as error:
         click.echo(str(error), err=True)
+        exit(1)
 
     type_name = existing["name"]
     resource_name = existing["base_url"].split("/")[-1]

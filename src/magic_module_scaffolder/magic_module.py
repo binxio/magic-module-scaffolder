@@ -5,6 +5,7 @@ from typing import Optional, Generator, Union
 
 from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.representer import RoundTripRepresenter
+from ruamel.yaml.tag import Tag
 
 from magic_module_scaffolder.yaml import yaml
 
@@ -62,7 +63,7 @@ class Field(CommentedMap):
 
     def __init__(self, tag):
         super().__init__(self)
-        self.yaml_set_tag(tag)
+        self.yaml_set_ctag(Tag(suffix=tag))
 
     @staticmethod
     def create(item: Union[dict, str]) -> "Field":
@@ -198,7 +199,7 @@ class Resource(CommentedMap):
 
     def __init__(self, other: dict):
         super().__init__(self)
-        self.tag.value = "!ruby/object:Api::Resource"
+        self.yaml_set_ctag(Tag(suffix="!ruby/object:Api::Resource"))
         self.update(other)
         if isinstance(other, CommentedMap):
             self.copy_attributes(other)
@@ -211,6 +212,11 @@ class Resource(CommentedMap):
             result = yaml.load(content)
 
         preamble = Resource.extract_preamble_comment(content)
+
+        if not result:
+            raise ValueError(
+                f"{path} is empty"
+            )
 
         if (
             not isinstance(result, CommentedMap)
