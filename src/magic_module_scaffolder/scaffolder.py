@@ -270,17 +270,15 @@ class Scaffolder:
                 )
             )
 
-            if method.response.get("$ref") == "Operation":
+            if not result.get("async") and method.response.get("$ref") == "Operation":
                 operation = api.get_schema_type_definition("Operation")
                 operation_properties = operation.get("properties", {})
                 if "done" in operation_properties:
-                    logging.info("adding new style async operation definition")
                     result.update(new_style_async)
                 elif "targetLink" in operation_properties:
-                    logging.info("adding compute style async operation definition")
                     result.update(old_style_async)
                 else:
-                    logging.info("no async operation definition added")
+                    logging.warning("no async operation definition added")
 
         def add_create_link():
             id_name = type_name[0].lower() + type_name[1:] + "Id"
