@@ -16,6 +16,17 @@ Existing field definitions are not overwritten, so once inspected and
 correct you can rerun the merge operation as often as you want. Note that
 fields of a resource which do not exist in the API are removed.
 
+Warning
+=======
+Do not use the scaffolder to generate PR on the magic-modules without careful
+inspection of the generated changes. The changes are generated based on what
+we can derive from the field description in the discovery document, and it
+may not always be correct.
+
+Use it as a way to bootstrap updates and determine whether new features
+have been added with respect to the existing resource definition.
+
+
 example - update
 ==============
 To update an existing resource definition, type:
