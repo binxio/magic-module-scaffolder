@@ -3,7 +3,7 @@
   <component name="Black">
     <option name="sdkName" value="Python 3.9 (magic-module-scaffolder)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.9 (magic-module-scaffolder)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.13 virtualenv at ~/Documents/projects/magic-module-scaffolder/venv" project-jdk-type="Python SDK" />
   <component name="ProjectType">
     <option name="id" value="jpab" />
   </component>
