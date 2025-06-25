@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Optional, Dict, Any
 
 import click
-from pattern.text.en import singularize
+from textblob import Word
 from ruamel.yaml import YAML
 from ruamel.yaml.scalarstring import LiteralScalarString
 
@@ -23,6 +23,8 @@ yaml.preserve_quotes = True
 yaml.preserve_whitespace = True
 yaml.width = 255
 
+def singularize(word: str) -> str:
+    return Word(word).singularize()
 
 class Scaffolder:
     """
